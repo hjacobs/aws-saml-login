@@ -1,6 +1,5 @@
 import click
 import datetime
-import time
 
 
 def action(msg, **kwargs):

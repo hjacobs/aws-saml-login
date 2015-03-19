@@ -2,3 +2,7 @@
 junit.xml
 coverage.xml
 .coverage
+build/
+*.pyc
+__pycache__
+dist/

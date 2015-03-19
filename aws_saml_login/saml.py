@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 import click
 import keyring
 import os
+import configparser
 import requests
 from aws_saml_login.console import Action, choice
 
@@ -129,11 +130,10 @@ def get_account_names(html: str) -> dict:
 
 
 def saml_login(profile, region, url, user, password=None, role=None, print_env_vars=False,
-               overwrite_default_credentials=False):
+               overwrite_default_credentials=False, keyring_key='aws-saml-login'):
     session = requests.Session()
     response = session.get(url)
 
-    keyring_key = 'aws-minion.saml'
     password = password or keyring.get_password(keyring_key, user)
     if not password:
         password = click.prompt('Password', hide_input=True)

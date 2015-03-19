@@ -1,0 +1,4 @@
+*.egg*
+junit.xml
+coverage.xml
+.coverage

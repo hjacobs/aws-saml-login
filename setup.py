@@ -213,7 +213,7 @@ def setup_package():
         author=AUTHOR,
         author_email=EMAIL,
         license=LICENSE,
-        keywords='aws docker ec2 elb lb boto deployment route53 stack traffic',
+        keywords='aws saml federated login shibboleth identity provider sts',
         long_description=read('README.rst'),
         classifiers=CLASSIFIERS,
         test_suite='tests',

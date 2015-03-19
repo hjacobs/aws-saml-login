@@ -2,9 +2,18 @@
 AWS SAML Login
 ==============
 
+This Python package provides some helper functions to allow programmatic retrieval of temporary AWS credentials from STS_ (Security Token Service) when using federated login with `Shibboleth IDP`_.
+
+The implementation relies on HTML parsing of the Shibboleth redirect page (HTML form) and the AWS role selection page.
+
+This package requires Python 3.4.
+
+Installation
+============
+
 .. code-block:: bash
 
-    $ pip3 install --upgrade aws-saml-login
+    $ sudo pip3 install --upgrade aws-saml-login
 
 Usage
 =====
@@ -30,4 +39,7 @@ Usage
     write_aws_credentials('default', key_id, secret, session_token)
 
     # AWS SDK (e.g. boto) can be used to call AWS endpoints
+
+.. _STS: http://docs.aws.amazon.com/STS/latest/UsingSTS/Welcome.html
+.. _Shibboleth IDP: http://shibboleth.net/products/identity-provider.html
 

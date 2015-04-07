@@ -6,3 +6,4 @@ build/
 *.pyc
 __pycache__
 dist/
+*.swp

@@ -119,6 +119,14 @@ class AuthenticationFailed(Exception):
         pass
 
 
+class AssumeRoleFailed(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __str__(self):
+        return 'Assuming role failed: {}'.format(self.msg)
+
+
 def authenticate(url, user, password):
     '''Authenticate against the provided Shibboleth Identity Provider'''
 
@@ -163,6 +171,9 @@ def assume_role(saml_xml, provider_arn, role_arn):
     finally:
         del os.environ['AWS_ACCESS_KEY_ID']
         del os.environ['AWS_SECRET_ACCESS_KEY']
+
+    if not response_data or 'Credentials' not in response_data:
+        raise AssumeRoleFailed(response_data)
 
     key_id = response_data['Credentials']['AccessKeyId']
     secret = response_data['Credentials']['SecretAccessKey']

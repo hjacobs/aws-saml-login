@@ -1,6 +1,7 @@
+import boto.exception
+import boto.sts
 import codecs
 from xml.etree import ElementTree
-import botocore.session
 from bs4 import BeautifulSoup
 import os
 import configparser
@@ -155,27 +156,20 @@ def authenticate(url, user, password):
 def assume_role(saml_xml, provider_arn, role_arn):
     saml_assertion = codecs.encode(saml_xml.encode('utf-8'), 'base64').decode('ascii').replace('\n', '')
 
-    # botocore NEEDS some credentials, but does not care about their actual values
+    # boto NEEDS some credentials, but does not care about their actual values
     os.environ['AWS_ACCESS_KEY_ID'] = 'fake123'
     os.environ['AWS_SECRET_ACCESS_KEY'] = 'fake123'
 
     try:
-        session = botocore.session.get_session()
-        sts = session.get_service('sts')
-        operation = sts.get_operation('AssumeRoleWithSAML')
-
-        endpoint = sts.get_endpoint('eu-west-1')
-        endpoint._signature_version = None
-        http_response, response_data = operation.call(endpoint, role_arn=role_arn, principal_arn=provider_arn,
-                                                      SAMLAssertion=saml_assertion)
+        conn = boto.sts.connect_to_region('eu-west-1')
+        response_data = conn.assume_role_with_saml(role_arn, provider_arn, saml_assertion)
+    except boto.exception.BotoServerError as e:
+        raise AssumeRoleFailed(e.message)
     finally:
         del os.environ['AWS_ACCESS_KEY_ID']
         del os.environ['AWS_SECRET_ACCESS_KEY']
 
-    if not response_data or 'Credentials' not in response_data:
-        raise AssumeRoleFailed(response_data)
-
-    key_id = response_data['Credentials']['AccessKeyId']
-    secret = response_data['Credentials']['SecretAccessKey']
-    session_token = response_data['Credentials']['SessionToken']
+    key_id = response_data.credentials.access_key
+    secret = response_data.credentials.secret_key
+    session_token = response_data.credentials.session_token
     return key_id, secret, session_token

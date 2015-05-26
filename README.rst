@@ -2,6 +2,26 @@
 AWS SAML Login
 ==============
 
+.. image:: https://travis-ci.org/zalando/aws-saml-login.svg?branch=master
+   :target: https://travis-ci.org/zalando/aws-saml-login
+   :alt: Build Status
+
+.. image:: https://coveralls.io/repos/zalando/aws-saml-login/badge.svg
+   :target: https://coveralls.io/r/zalando/aws-saml-login
+   :alt: Code Coverage
+
+.. image:: https://img.shields.io/pypi/dw/aws-saml-login.svg
+   :target: https://pypi.python.org/pypi/aws-saml-login/
+   :alt: PyPI Downloads
+
+.. image:: https://img.shields.io/pypi/v/aws-saml-login.svg
+   :target: https://pypi.python.org/pypi/aws-saml-login/
+   :alt: Latest PyPI version
+
+.. image:: https://img.shields.io/pypi/l/aws-saml-login.svg
+   :target: https://pypi.python.org/pypi/aws-saml-login/
+   :alt: License
+
 This Python package provides some helper functions to allow programmatic retrieval of temporary AWS credentials from STS_ (Security Token Service) when using federated login with `Shibboleth IDP`_.
 
 The implementation relies on HTML parsing of the Shibboleth redirect page (HTML form) and the AWS role selection page.

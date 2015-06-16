@@ -13,13 +13,14 @@ git --version
 version=$1
 
 sed -i "s/__version__ = .*/__version__ = '${version}'/" aws_saml_login/__init__.py
+python3 setup.py clean
+python3 setup.py test
+python3 setup.py flake8
+
 git add aws_saml_login/__init__.py
 
 git commit -m "Bumped version to $version"
 git push
-
-python3 setup.py clean
-python3 setup.py test
 
 python3 setup.py sdist upload
 

@@ -39,7 +39,7 @@ def get_saml_response(html: str):
     >>> get_saml_response('<body xmlns="bla"><form><input name="SAMLResponse" value="eG1s"/></form></body>')
     'xml'
     """
-    soup = BeautifulSoup(html)
+    soup = BeautifulSoup(html, "html.parser")
 
     for elem in soup.find_all('input', attrs={'name': 'SAMLResponse'}):
         saml_base64 = elem.get('value')
@@ -52,7 +52,7 @@ def get_form_action(html: str):
     >>> get_form_action('<body><form action="test"></form></body>')
     'test'
     '''
-    soup = BeautifulSoup(html)
+    soup = BeautifulSoup(html, "html.parser")
     return soup.find('form').get('action')
 
 
@@ -99,7 +99,7 @@ def get_account_names(html: str) -> dict:
     >>> get_account_names('<div class="saml-account-name">Account: blub  123) </div>')
     {}
     '''
-    soup = BeautifulSoup(html)
+    soup = BeautifulSoup(html, "html.parser")
 
     accounts = {}
     for elem in soup.find_all('div', attrs={'class': 'saml-account-name'}):

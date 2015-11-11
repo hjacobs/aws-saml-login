@@ -85,7 +85,6 @@ class PyTest(TestCommand):
         params = {'args': self.test_args}
         if self.cov:
             params['args'] += self.cov
-            params['plugins'] = ['cov']
         if self.junitxml:
             params['args'] += self.junitxml
         params['args'] += ['--doctest-modules', MAIN_PACKAGE, '-s']
@@ -221,7 +220,7 @@ def setup_package():
         packages=setuptools.find_packages(exclude=['tests', 'tests.*']),
         package_data={MAIN_PACKAGE: ["*.json"]},
         install_requires=install_reqs,
-        setup_requires=['six', 'flake8'],
+        setup_requires=['flake8'],
         cmdclass=cmdclass,
         tests_require=['pytest-cov', 'pytest'],
         command_options=command_options,

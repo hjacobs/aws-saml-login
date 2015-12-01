@@ -1,5 +1,4 @@
-import boto.exception
-import boto.sts
+import boto3
 import codecs
 from xml.etree import ElementTree
 from bs4 import BeautifulSoup
@@ -9,6 +8,27 @@ import requests
 
 
 AWS_CREDENTIALS_PATH = '~/.aws/credentials'
+
+
+def get_boto3_session(key_id, secret, session_token=None, region=None, profile=None):
+    """
+    get boto3 session for giving keys
+
+    >>> get_boto3_session('keyid', 'secret', region='eu-central-1')
+    Session(region='eu-central-1')
+
+    >>> get_boto3_session(None, None, region='us-west-1')
+    Session(region='us-west-1')
+
+    >>> get_boto3_session(None, None)
+    Session(region=None)
+
+    """
+    return boto3.session.Session(aws_access_key_id=key_id,
+                                 aws_secret_access_key=secret,
+                                 aws_session_token=session_token,
+                                 region_name=region,
+                                 profile_name=profile)
 
 
 def write_aws_credentials(profile, key_id, secret, session_token=None):
@@ -57,6 +77,12 @@ def get_form_action(html: str):
 
 
 def get_account_name(role_arn: str, account_names: dict):
+    '''
+    >>> get_account_name('arn:aws:iam::123:role/Admin', {'123': 'blub'})
+    'blub'
+    >>> get_account_name('arn:aws:iam::456:role/Admin', {'123': 'blub'})
+
+    '''
     number = role_arn.split(':')[4]
     if account_names:
         return account_names.get(number)
@@ -156,20 +182,16 @@ def authenticate(url, user, password):
 def assume_role(saml_xml, provider_arn, role_arn):
     saml_assertion = codecs.encode(saml_xml.encode('utf-8'), 'base64').decode('ascii').replace('\n', '')
 
-    # boto NEEDS some credentials, but does not care about their actual values
-    os.environ['AWS_ACCESS_KEY_ID'] = 'fake123'
-    os.environ['AWS_SECRET_ACCESS_KEY'] = 'fake123'
-
     try:
-        conn = boto.sts.connect_to_region('eu-west-1')
-        response_data = conn.assume_role_with_saml(role_arn, provider_arn, saml_assertion)
-    except boto.exception.BotoServerError as e:
-        raise AssumeRoleFailed(e.message)
-    finally:
-        del os.environ['AWS_ACCESS_KEY_ID']
-        del os.environ['AWS_SECRET_ACCESS_KEY']
+        sts = boto3.client('sts')
+        response_data = sts.assume_role_with_saml(RoleArn=role_arn,
+                                                  PrincipalArn=provider_arn,
+                                                  SAMLAssertion=saml_assertion)
+    except Exception as e:
+        raise AssumeRoleFailed(str(e))
 
-    key_id = response_data.credentials.access_key
-    secret = response_data.credentials.secret_key
-    session_token = response_data.credentials.session_token
-    return key_id, secret, session_token
+    key_id = response_data['Credentials'].get('AccessKeyId')
+    secret = response_data['Credentials'].get('SecretAccessKey')
+    session_token = response_data['Credentials'].get('SessionToken')
+    expiration = response_data['Credentials'].get('Expiration')
+    return key_id, secret, session_token, expiration

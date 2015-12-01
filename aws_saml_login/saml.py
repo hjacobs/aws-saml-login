@@ -190,8 +190,4 @@ def assume_role(saml_xml, provider_arn, role_arn):
     except Exception as e:
         raise AssumeRoleFailed(str(e))
 
-    key_id = response_data['Credentials'].get('AccessKeyId')
-    secret = response_data['Credentials'].get('SecretAccessKey')
-    session_token = response_data['Credentials'].get('SessionToken')
-    expiration = response_data['Credentials'].get('Expiration')
-    return key_id, secret, session_token, expiration
+    return tuple([response_data['Credentials'].get(x) for x in ('AccessKeyId', 'SecretAccessKey', 'SessionToken')])

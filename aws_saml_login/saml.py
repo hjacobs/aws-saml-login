@@ -20,9 +20,6 @@ def get_boto3_session(key_id, secret, session_token=None, region=None, profile=N
     >>> get_boto3_session(None, None, region='us-west-1')
     Session(region='us-west-1')
 
-    >>> get_boto3_session(None, None)
-    Session(region=None)
-
     """
     return boto3.session.Session(aws_access_key_id=key_id,
                                  aws_secret_access_key=secret,

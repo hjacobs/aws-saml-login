@@ -40,7 +40,7 @@ Usage
 
 .. code-block:: python
 
-    from aws_saml_login import authenticate, assume_role, write_aws_credentials
+    from aws_saml_login import authenticate, assume_role, write_aws_credentials, get_boto3_session
 
     # authenticate against identity provider
     saml_xml, roles = authenticate('https://shibboleth-idp.example.org', user, password)
@@ -58,6 +58,26 @@ Usage
     # write to ~/.aws/credentials
     write_aws_credentials('default', key_id, secret, session_token)
 
+    # get boto3 session
+    session = get_boto3_session(key_id, secret, session_token)
+    ec2 = session.resource('ec2', 'eu-west-1')
+    iam = session.client('iam')
+
+    # get boto3 session with default region eu-central-1
+    session = get_boto3_session(key_id, secret, session_token, 'eu-central-1')
+    ec2 = session.resource('ec2')
+
+    # get session for the first 5 roles
+    sessions = {}
+    for role in roles[:5]:
+      provider_arn, role_arn, account_name = role
+      key_id, secret, session_token, expiration = assume_role(saml_xml, provider_arn, role_arn)
+      sessions['{} {}'.format(account_name,role_arn.split(':')[-1])] = get_boto3_session(None, key_id, secret, session_token)
+
+    for key in sessions.keys():
+      print('Key: {} / AccountAlias: {}'
+            .format(key,
+                    sessions[key].client('iam').list_account_aliases()['AccountAliases']))
     # AWS SDK (e.g. boto) can be used to call AWS endpoints
 
 .. _STS: http://docs.aws.amazon.com/STS/latest/UsingSTS/Welcome.html

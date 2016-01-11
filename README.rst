@@ -72,7 +72,7 @@ Usage
     for role in roles[:5]:
       provider_arn, role_arn, account_name = role
       key_id, secret, session_token, expiration = assume_role(saml_xml, provider_arn, role_arn)
-      sessions['{} {}'.format(account_name,role_arn.split(':')[-1])] = get_boto3_session(None, key_id, secret, session_token)
+      sessions['{} {}'.format(account_name,role_arn.split(':')[-1])] = get_boto3_session(key_id, secret, session_token)
 
     for key in sessions.keys():
       print('Key: {} / AccountAlias: {}'

@@ -84,6 +84,85 @@ Usage
 .. _Shibboleth IDP: http://shibboleth.net/products/identity-provider.html
 
 
+shibboleth configuration
+========================
+
+.. code-block:: xml
+
+    <rp:RelyingPartyGroup ...>
+        ...
+        <!-- ========================================== -->
+        <!--      Metadata Configuration                -->
+        <!-- ========================================== -->
+        <!-- MetadataProvider the combining other MetadataProviders -->
+        <metadata:MetadataProvider id="ShibbolethMetadata" xsi:type="metadata:ChainingMetadataProvider">
+            ...
+            <metadata:MetadataProvider id="amazon-webservices" xsi:type="metadata:FileBackedHTTPMetadataProvider"
+                metadataURL="https://signin.aws.amazon.com/static/saml-metadata.xml"
+                backingFile="shibboleth-idp/metadata/amazon-webservices.xml">
+            </metadata:MetadataProvider>
+            ...
+        </metadata:MetadataProvider>
+        ...
+        <rp:RelyingParty id="urn:amazon:webservices"
+            provider="https://myidp.example.org/shibboleth"
+            defaultSigningCredentialRef="IdPCredential">
+              <rp:ProfileConfiguration xsi:type="saml:SAML2SSOProfile" includeAttributeStatement="true"
+                  assertionLifetime="PT5M" assertionProxyCount="0"
+                  signResponses="never" signAssertions="always"
+                  encryptAssertions="never" encryptNameIds="never"/>
+        </rp:RelyingParty>
+        ...
+    </rp:RelyingPartyGroup>
+
+    <resolver:AttributeResolver ...>
+        ...
+        <!-- ========================================== -->
+        <!--      AWS Connectors                        -->
+        <!-- ========================================== -->
+        <resolver:AttributeDefinition id="awsRoles" xsi:type="ad:Mapped" sourceAttributeID="memberof">
+            <resolver:Dependency ref="corpLDAP"/>
+            <resolver:AttributeEncoder
+                xsi:type="enc:SAML2String"
+                name="https://aws.amazon.com/SAML/Attributes/Role"
+                friendlyName="Role" />
+            <ad:ValueMap>
+                <ad:ReturnValue>arn:aws:iam::$2:saml-provider/Shibboleth,arn:aws:iam::$2:role/Shibboleth-$1</ad:ReturnValue>
+                <ad:SourceValue ignoreCase="true">cn=([^,]*),ou=Roles,ou=[^,]*?([0-9]+),ou=AWS.*</ad:SourceValue>
+            </ad:ValueMap>
+        </resolver:AttributeDefinition>
+
+        <resolver:AttributeDefinition id="awsRoleSessionName" xsi:type="ad:Simple" sourceAttributeID="uid">
+            <resolver:Dependency ref="corpLDAP"/>
+            <resolver:AttributeEncoder
+                xsi:type="enc:SAML2String"
+                name="https://aws.amazon.com/SAML/Attributes/RoleSessionName"
+                friendlyName="RoleSessionName" />
+        </resolver:AttributeDefinition>
+        ...
+    </resolver:AttributeResolver>
+
+    <afp:AttributeFilterPolicyGroup ...>
+        ...
+        <afp:AttributeFilterPolicy id="afP_aws">
+            <afp:PolicyRequirementRule xsi:type="basic:AttributeRequesterString" value="urn:amazon:webservices" />
+            <afp:AttributeRule attributeID="transientId">
+                <afp:PermitValueRule xsi:type="basic:ANY"/>
+            </afp:AttributeRule>
+            <afp:AttributeRule attributeID="awsRoles">
+                <afp:PermitValueRule xsi:type="basic:ANY"/>
+            </afp:AttributeRule>
+            <afp:AttributeRule attributeID="awsRoleSessionName">
+                <afp:PermitValueRule xsi:type="basic:ANY"/>
+            </afp:AttributeRule>
+        </afp:AttributeFilterPolicy>
+        ...
+    </afp:AttributeFilterPolicyGroup>
+
+To login, you must open the right providerId with the Unsolicited/SSO URL:
+https://myidp.example.org/profile/SAML2/Unsolicited/SSO?providerId=urn:amazon:webservices
+
+
 License
 =======
 

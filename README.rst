@@ -22,7 +22,7 @@ AWS SAML Login
    :target: https://pypi.python.org/pypi/aws-saml-login/
    :alt: License
 
-This Python package provides some helper functions to allow programmatic retrieval of temporary AWS credentials from STS_ (Security Token Service) when using federated login with `Shibboleth IDP`_.
+This Python package provides some helper functions to allow programmatic retrieval of temporary AWS credentials from STS_ (Security Token Service) when using federated login with `Shibboleth Identity Provider`_. Currently it supports only Shibboleth IDP.
 
 The implementation relies on HTML parsing of the Shibboleth redirect page (HTML form) and the AWS role selection page.
 

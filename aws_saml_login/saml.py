@@ -8,6 +8,7 @@ import requests
 
 
 AWS_CREDENTIALS_PATH = '~/.aws/credentials'
+OPENAM_SEARCH_STRING = 'XUI/#login/&'
 
 
 def get_boto3_session(key_id, secret, session_token=None, region=None, profile=None):
@@ -15,10 +16,10 @@ def get_boto3_session(key_id, secret, session_token=None, region=None, profile=N
     get boto3 session for giving keys
 
     >>> get_boto3_session('keyid', 'secret', region='eu-central-1')
-    Session(region='eu-central-1')
+    Session(region_name='eu-central-1')
 
     >>> get_boto3_session(None, None, region='us-west-1')
-    Session(region='us-west-1')
+    Session(region_name='us-west-1')
 
     """
     return boto3.session.Session(aws_access_key_id=key_id,
@@ -152,14 +153,61 @@ class AssumeRoleFailed(Exception):
 
 
 def authenticate(url, user, password):
-    '''Authenticate against the provided Shibboleth Identity Provider'''
+    '''Authenticate against the provided Shibboleth Identity Provider.
+
+    Supports Shibboleth or OpenAM.
+    '''
 
     session = requests.Session()
+
     response = session.get(url)
 
-    # NOTE: parameters are hardcoded for Shibboleth IDP
-    data = {'j_username': user, 'j_password': password, 'submit': 'Login'}
-    response2 = session.post(response.url, data=data)
+    # Check if OpenAM is the IdP
+    if OPENAM_SEARCH_STRING in response.url:
+        server_info_url = response.url[:response.url.index(OPENAM_SEARCH_STRING)] + 'json/serverinfo/*'
+        openam_url = response.url.replace(OPENAM_SEARCH_STRING, 'json/authenticate?', 1)
+
+        # Get cookie name
+        response = session.get(server_info_url)
+        cookie_name = response.json()['cookieName']
+
+        # Get login form
+        response = session.post(openam_url)
+        login_form = response.json()
+
+        # Submit authentication credentials
+        for item in login_form['callbacks']:
+            if item['type'] == 'NameCallback':
+                item['input'][0]['value'] = user
+            if item['type'] == 'PasswordCallback':
+                item['input'][0]['value'] = password
+
+        response2 = session.post(openam_url, json=login_form)
+
+        # Ask for second factor authentication, if necessary
+        if 'stage' in response2.json():
+            otp_form = response2.json()
+
+            otp_code = input('Submit OTP code: ')
+            for item in otp_form['callbacks']:
+                if item['type'] == 'PasswordCallback':
+                    item['input'][0]['value'] = otp_code
+
+            response2 = session.post(openam_url, json=otp_form)
+
+        if response2.status_code != 200:
+            raise AuthenticationFailed()
+
+        # Set cookie for SAML response
+        session.cookies.set(cookie_name, response2.json()['tokenId'])
+
+        response2 = session.get(response2.json()['successUrl'])
+    else:
+
+        # NOTE: parameters are hardcoded for Shibboleth IDP
+        data = {'j_username': user, 'j_password': password, 'submit': 'Login'}
+        response2 = session.post(response.url, data=data)
+
     saml_xml = get_saml_response(response2.text)
     if not saml_xml:
         raise AuthenticationFailed()
